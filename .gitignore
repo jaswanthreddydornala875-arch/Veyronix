@@ -1,0 +1,11 @@
+# Environment variables
+backend/.env
+
+# Dependencies
+node_modules/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
