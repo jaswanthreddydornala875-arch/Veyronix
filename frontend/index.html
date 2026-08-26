@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LabelLens — Legal Metrology label compliance</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+
+<link rel="stylesheet" href="css/styles.css">
+<script>
+/* Applied before first paint so a saved "light" preference never flashes dark first. */
+(function(){
+  try {
+    var t = localStorage.getItem('labellens-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch(e){}
+})();
+</script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="mark">Label<span>Lens</span></div>
+    <div class="tag">Legal Metrology (Packaged Commodities) Rules, 2011</div>
+  </div>
+  <div class="spacer"></div>
+  <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false">
+    <span class="theme-toggle-icon" aria-hidden="true">🌙</span><span class="theme-toggle-label">Dark</span>
+  </button>
+  <div class="role">
+    <span>Signed in as</span>
+    <select id="role">
+      <option value="Legal Metrology Officer">Legal Metrology Officer</option>
+      <option value="Brand Compliance Team">Brand Compliance Team</option>
+      <option value="E-commerce Seller">E-commerce Seller</option>
+      <option value="Consumer">Consumer</option>
+    </select>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" aria-selected="true"  data-view="scan">Scan a label</button>
+  <button role="tab" aria-selected="false" data-view="repo">Product repository</button>
+  <button role="tab" aria-selected="false" data-view="rules">Rule reference</button>
+</nav>
+
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero-inner">
+    <div class="hero-content">
+      <p class="eyebrow"><span class="live-dot"></span>Veyronix intelligence · label compliance</p>
+      <h1 id="hero-title">Clarity before every package ships.</h1>
+      <p class="hero-lead">A visual review room for packaged-commodity labels. Detect what matters, understand the rule, and ship with confidence.</p>
+      <div class="hero-actions">
+        <button class="hero-cta" id="heroScan">Start a live scan <span>↗</span></button>
+        <button class="hero-text-btn" id="heroDemo">Watch demo <i>▶</i></button>
+      </div>
+      <div class="hero-meta">
+        <span><strong data-count="08">00</strong>declarations checked</span>
+        <span><strong data-count="02">00</strong>measurement tables</span>
+        <span><strong data-count="01">00</strong>focused review</span>
+      </div>
+    </div>
+    <div class="signal-console" aria-label="Live compliance scan preview">
+      <div class="console-top"><span class="console-status"><i></i> Vision engine active</span><span>LIVE / 01</span></div>
+      <div class="package-orbit"><div class="orbit-ring ring-one"></div><div class="orbit-ring ring-two"></div><div class="package-card"><span class="package-brand">NUTRI<br>CRUNCH</span><span class="package-flavour">MASALA<br>CHIPS</span><span class="package-qty">90 g</span></div><span class="scan-line"></span><span class="point point-a"></span><span class="point point-b"></span><span class="point point-c"></span></div>
+      <div class="console-readout"><div><span>LABEL CONFIDENCE</span><b>98.4%</b></div><div><span>ISSUES FOUND</span><b class="issue-count">02</b></div><div class="console-wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+    </div>
+  </div>
+</section>
+
+<main>
+
+<!-- ========================= SCAN ========================= -->
+<section class="view" id="view-scan">
+  <div class="section-intro">
+    <div><span class="section-kicker">Workspace / 01</span><h2>Review the details<br>that protect your launch.</h2></div>
+    <p>Load a package label, tune the review basis, then watch every declaration resolve against the relevant rule.</p>
+  </div>
+  <div class="workbench">
+
+    <!-- LEFT: input -->
+    <div>
+      <div class="card">
+        <div class="card-head"><h2>Source</h2><span class="cite">Rule 6 · Rule 7</span></div>
+        <div class="card-body">
+          <div class="samples" id="samples"></div>
+
+          <div class="drop" id="drop">
+            Drop one or more label photos here, or
+            <label for="file">choose a file</label>
+            <input type="file" id="file" accept="image/*" multiple>
+            <button class="camera-trigger" id="openCamera" type="button"><span>⌁</span> Open camera</button>
+            <div class="mono" style="font-size:10.5px;margin-top:6px;color:var(--ink-35)">
+              Photos are read locally with OCR in your browser before the compliance review.
+            </div>
+          </div>
+
+          <div class="stage" id="stage"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Measurement basis</h2><span class="cite">Rule 7(2)</span></div>
+        <div class="card-body">
+          <div class="params">
+            <div class="field">
+              <label for="basis">Net quantity declared in</label>
+              <select id="basis">
+                <option value="weight">Weight or volume (Table I)</option>
+                <option value="count">Length, area or number (Table II)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="qty" id="qtyLabel">Net quantity (g / ml)</label>
+              <input type="number" id="qty" min="0" step="1">
+            </div>
+            <div class="field">
+              <label for="pdp">Principal display panel area (cm²)</label>
+              <input type="number" id="pdp" min="0" step="1">
+            </div>
+            <div class="field">
+              <label for="surface">Declaration surface</label>
+              <select id="surface">
+                <option value="printed">Printed on label</option>
+                <option value="blown">Blown, moulded, embossed or perforated</option>
+              </select>
+            </div>
+          </div>
+          <label class="check">
+            <input type="checkbox" id="ecom">
+            E-commerce listing, not a physical package (Rule 6(10))
+          </label>
+          <button class="btn wide" id="run">Run compliance check</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: output -->
+    <div id="results">
+      <div class="card"><div class="empty">
+        Pick a sample or upload a label,<br>then run the check.
+      </div></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ========================= REPOSITORY ========================= -->
+<section class="view" id="view-repo" hidden>
+  <div class="card">
+    <div class="card-head">
+      <h2>Product repository</h2>
+      <span class="cite" id="repoCount"></span>
+    </div>
+    <table class="tbl">
+      <thead><tr>
+        <th>Product</th><th>Checked</th><th>Verdict</th><th>Violations</th><th>Checked by</th><th></th>
+      </tr></thead>
+      <tbody id="repoBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ========================= RULES ========================= -->
+<section class="view" id="view-rules" hidden>
+  <div class="card">
+    <div class="card-head"><h2>Mandatory declarations</h2><span class="cite">Rule 6(1)</span></div>
+    <table class="tbl">
+      <thead><tr><th>Declaration</th><th>Provision</th><th>What LabelLens checks</th></tr></thead>
+      <tbody id="rule6Body"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Minimum height of letters and numerals</h2><span class="cite">Rule 7(2), Table I</span></div>
+    <table class="tbl">
+      <thead><tr><th>Net quantity in weight or volume</th><th>Printed</th><th>Blown / moulded / embossed</th></tr></thead>
+      <tbody>
+        <tr><td>Up to 200 g or ml</td><td class="num">1 mm</td><td class="num">2 mm</td></tr>
+        <tr><td>Above 200 and up to 500 g or ml</td><td class="num">2 mm</td><td class="num">4 mm</td></tr>
+        <tr><td>Above 500 g or ml</td><td class="num">4 mm</td><td class="num">6 mm</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Minimum height by panel area</h2><span class="cite">Rule 7(2), Table II</span></div>
+    <table class="tbl">
+      <thead><tr><th>Quantity in length, area or number — panel area</th><th>Printed</th><th>Blown / moulded / embossed</th></tr></thead>
+      <tbody>
+        <tr><td>Up to 100 cm²</td><td class="num">1 mm</td><td class="num">2 mm</td></tr>
+        <tr><td>Above 100 and up to 500 cm²</td><td class="num">2 mm</td><td class="num">4 mm</td></tr>
+        <tr><td>Above 500 and up to 2500 cm²</td><td class="num">4 mm</td><td class="num">6 mm</td></tr>
+        <tr><td>Above 2500 cm²</td><td class="num">6 mm</td><td class="num">6 mm</td></tr>
+      </tbody>
+    </table>
+    <div class="card-body">
+      <div class="prose">
+        <h3>Width</h3>
+        <p>The width of a letter or numeral must be at least one third of its height, except for the
+        numeral 1 and the letters i, I and l. <span class="mono">Rule 7(3)</span></p>
+        <h3>Panel area</h3>
+        <p>Rectangular package: height × width of one side. Cylindrical: 40% of height × circumference.
+        Other shapes: 40% of total surface area. Tops, bottoms, can flanges and bottle necks are excluded.
+        <span class="mono">Rule 7(4)</span></p>
+        <h3>E-commerce listings</h3>
+        <p>Every mandatory declaration except month and year of manufacture must appear on the platform
+        before the sale is completed. Height rules do not apply to a digital listing.
+        <span class="mono">Rule 6(10)</span></p>
+        <h3>Penalty on non-conforming packages</h3>
+        <p>Fine up to ₹25,000 for a first offence, up to ₹50,000 for a second, and ₹50,000 to ₹1,00,000
+        or imprisonment up to one year, or both, for subsequent offences.
+        <span class="mono">Legal Metrology Act 2009, Sec. 36(1)</span></p>
+      </div>
+      <div class="note-strip" style="margin-top:18px">
+        Rule text here is a working summary for the prototype. Confirm against the Gazette notification
+        before treating any output as a legal finding.
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div class="camera-modal" id="cameraModal" hidden role="dialog" aria-modal="true" aria-labelledby="cameraTitle">
+  <div class="camera-panel">
+    <div class="camera-panel-head"><div><span class="section-kicker">Live capture</span><h2 id="cameraTitle">Frame the display panel.</h2></div><button class="camera-close" id="closeCamera" type="button" aria-label="Close camera">×</button></div>
+    <div class="camera-viewfinder"><video id="cameraVideo" autoplay playsinline muted></video><canvas id="cameraCanvas" hidden></canvas><div class="camera-grid"></div><div class="camera-corners"></div><p id="cameraMessage">Align the product label inside the guide.</p></div>
+    <div class="camera-controls"><button class="btn ghost" id="flipCamera" type="button">Flip camera</button><button class="capture-button" id="capturePhoto" type="button" aria-label="Capture label photo"><i></i></button><button class="btn" id="usePhoto" type="button" disabled>Use photo</button></div>
+  </div>
+</div>
+
+<footer>LabelLens AI · prototype · Smart India Hackathon 2026 · PS 26034 · Ministry of Consumer Affairs</footer>
+
+
+<script src="js/rules.js"></script>
+<script src="js/samples.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script src="js/render.js"></script>
+<script src="js/report.js"></script>
+<script>
+"use strict";
+/* ---- boot ---- */
+loadSample('chips');
+renderRepo();
+
+</script>
+</body>
+</html>
